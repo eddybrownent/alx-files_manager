@@ -37,7 +37,7 @@ class AuthController {
   }
 
   static async getDisconnected(req, res) {
-    const { userId, key } = await userUtils.getUserIdAndKey(req);
+    const { userId, key } = await userUtils.getIdAndKey(req);
 
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
