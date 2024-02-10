@@ -1,5 +1,7 @@
+import { ObjectId } from 'mongodb';
 import sha1 from 'sha1';
 import dbClient from '../utils/db';
+import userUtils from '../utils/users';
 
 class UsersController {
   static async postNew(req, res) {
@@ -41,6 +43,20 @@ class UsersController {
       return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
+
+  static async getMe(req, res) {
+    const { userId } = await userUtils.getIdAndKey(req);
+
+    const user = await userUtils.getUser({
+      _id: ObjectId(userId),
+    });
+
+    if (!user) {
+      return res.status(401).json({ errors: 'Unauthorized' });
+    }
+
+    return res.status(200).json({ id: user._id, email: user.email });
+  }
 }
 
-module.exports = UsersController;
+export default UsersController;
