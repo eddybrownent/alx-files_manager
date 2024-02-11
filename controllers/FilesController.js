@@ -13,7 +13,7 @@ class FilesController {
 
       // if user not found returns Unauthorized
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).send({ error: 'Unauthorized' });
       }
 
       // gets required data from request body
@@ -23,23 +23,23 @@ class FilesController {
 
       // checking the fields if correct
       if (!name) {
-        return res.status(400).json({ error: 'Missing name' });
+        return res.status(400).send({ error: 'Missing name' });
       }
       if (!type || !['folder', 'file', 'image'].includes(type)) {
-        return res.status(400).json({ error: 'Missing or invalid type' });
+        return res.status(400).send({ error: 'Missing or invalid type' });
       }
       if (type !== 'folder' && !data) {
-        return res.status(400).json({ error: 'Missing data' });
+        return res.status(400).send({ error: 'Missing data' });
       }
 
       // checking is parentId is there
       if (parentId !== 0) {
-        const parentFile = await dbClient.db.collection('files').findOne({ id: ObjectId(parentId) });
+        const parentFile = await dbClient.db.collection('files').findOne({ _id: ObjectId(parentId) });
         if (!parentFile) {
-          return res.status(400).json({ error: 'Parent not found' });
+          return res.status(400).send({ error: 'Parent not found' });
         }
         if (parentFile.type !== 'folder') {
-          return res.status(400).json({ error: 'Parent is not a folder' });
+          return res.status(400).send({ error: 'Parent is not a folder' });
         }
       }
 
@@ -76,7 +76,7 @@ class FilesController {
         fs.writeFileSync(localPath, fileData);
 
         // add a localPath to file document
-        // fileDoc.localPath = localPath;
+        fileDoc.localPath = localPath;
       }
 
       // inserts file document into DB
@@ -85,15 +85,16 @@ class FilesController {
 
       // removes _id field
       delete fileDoc._id;
+      delete fileDoc.localPath;
 
       // adds generated ID to file document
       fileDoc.id = insertedId;
 
       // return the new file with status code 201
-      return res.status(201).json(fileDoc);
+      return res.status(201).send(fileDoc);
     } catch (error) {
       console.error('Error uploading file:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      return res.status(500).send({ error: 'Internal Server Error' });
     }
   }
 }
