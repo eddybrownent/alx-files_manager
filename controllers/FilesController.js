@@ -48,7 +48,6 @@ class FilesController {
 
       // prepare file document to insert into DB
       const fileDoc = {
-        id: null,
         userId,
         name,
         type,
@@ -93,11 +92,98 @@ class FilesController {
       // adds generated ID to file document
       fileDoc.id = insertedId;
 
+      const responseObj = {
+        id: fileDoc.id,
+        ...fileDoc,
+      };
+
       // return the new file with status code 201
-      return res.status(201).send(fileDoc);
+      return res.status(201).send(responseObj);
     } catch (error) {
       console.error('Error uploading file:', error);
       return res.status(500).send({ error: 'Internal Server Error' });
+    }
+  }
+
+  static async getShow(req, res) {
+    try {
+      // Retrieve user ID based on the token
+      const { userId } = await userUtils.getIdAndKey(req);
+
+      // If user not found, return Unauthorized
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // Retrieve file document based on the ID
+      const file = await dbClient.db.collection('files').findOne({ _id: ObjectId(req.params.id), userId });
+
+      // If no file document found, return Not Found
+      if (!file) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+
+      // Remove unwanted fields
+      const sanitizedFile = {
+        ...file,
+        localPath: undefined,
+        _id: undefined,
+      };
+
+      // Return the file document
+      return res.status(200).json(sanitizedFile);
+    } catch (error) {
+      console.error('Error retrieving file:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
+    }
+  }
+
+  static async getIndex(req, res) {
+    try {
+      // Retrieve user ID based on the token
+      const { userId } = await userUtils.getIdAndKey(req);
+
+      // If user not found, return Unauthorized
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // Retrieve parentId from query parameters or set default to 0
+      const parentId = req.query.parentId || 0;
+
+      // Define pagination parameters
+      const page = req.query.page || 0;
+      const limit = 20;
+      const skip = page * limit;
+
+      // Retrieve file documents based on the parentId and pagination
+      const files = await dbClient.db.collection('files')
+        .find({ parentId, userId })
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+
+      const sanitizedFiles = files.map((file) => {
+        const sanitizedFile = {
+          ...file,
+          localPath: undefined,
+          _id: undefined,
+        };
+
+        // Check if _id exists and is valid before converting it to a string
+        if (file._id && ObjectId.isValid(file._id)) {
+          sanitizedFile.id = file._id.toString();
+        }
+
+        delete sanitizedFile._id;
+        return sanitizedFile;
+      });
+
+      // Return the list of file documents
+      return res.status(200).json(sanitizedFiles);
+    } catch (error) {
+      console.error('Error retrieving files:', error);
+      return res.status(500).json({ error: 'Internal Server Error' });
     }
   }
 }
