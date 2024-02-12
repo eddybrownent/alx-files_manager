@@ -26,7 +26,7 @@ class FilesController {
         return res.status(400).send({ error: 'Missing name' });
       }
       if (!type || !['folder', 'file', 'image'].includes(type)) {
-        return res.status(400).send({ error: 'Missing or invalid type' });
+        return res.status(400).send({ error: 'Missing type' });
       }
       if (type !== 'folder' && !data) {
         return res.status(400).send({ error: 'Missing data' });
@@ -34,6 +34,9 @@ class FilesController {
 
       // checking is parentId is there
       if (parentId !== 0) {
+        if (!ObjectId.isValid(parentId)) {
+            return res.status(400).send({ error: 'Parent not found' });
+        }
         const parentFile = await dbClient.db.collection('files').findOne({ _id: ObjectId(parentId) });
         if (!parentFile) {
           return res.status(400).send({ error: 'Parent not found' });
