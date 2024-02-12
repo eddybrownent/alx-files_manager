@@ -164,18 +164,14 @@ class FilesController {
         .toArray();
 
       const sanitizedFiles = files.map((file) => {
+        // Check if _id exists before converting it to a string
+        const id = file._id ? file._id.toString() : null;
         const sanitizedFile = {
+          id,
           ...file,
           localPath: undefined,
           _id: undefined,
         };
-
-        // Check if _id exists and is valid before converting it to a string
-        if (file._id && ObjectId.isValid(file._id)) {
-          sanitizedFile.id = file._id.toString();
-        }
-
-        delete sanitizedFile._id;
         return sanitizedFile;
       });
 
