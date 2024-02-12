@@ -112,7 +112,7 @@ class FilesController {
 
       // If user not found, return Unauthorized
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).send({ error: 'Unauthorized' });
       }
 
       // Retrieve file document based on the ID
@@ -120,7 +120,7 @@ class FilesController {
 
       // If no file document found, return Not Found
       if (!file) {
-        return res.status(404).json({ error: 'Not found' });
+        return res.status(404).send({ error: 'Not found' });
       }
 
       // Remove unwanted fields
@@ -131,10 +131,10 @@ class FilesController {
       };
 
       // Return the file document
-      return res.status(200).json(sanitizedFile);
+      return res.status(200).send(sanitizedFile);
     } catch (error) {
       console.error('Error retrieving file:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      return res.status(500).send({ error: 'Internal Server Error' });
     }
   }
 
@@ -145,7 +145,7 @@ class FilesController {
 
       // If user not found, return Unauthorized
       if (!userId) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).send({ error: 'Unauthorized' });
       }
 
       // Retrieve parentId from query parameters or set default to 0
@@ -176,10 +176,10 @@ class FilesController {
       });
 
       // Return the list of file documents
-      return res.status(200).json(sanitizedFiles);
+      return res.status(200).send(sanitizedFiles);
     } catch (error) {
       console.error('Error retrieving files:', error);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      return res.status(500).send({ error: 'Internal Server Error' });
     }
   }
 }
