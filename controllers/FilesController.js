@@ -35,7 +35,7 @@ class FilesController {
       // checking is parentId is there
       if (parentId !== 0) {
         if (!ObjectId.isValid(parentId)) {
-            return res.status(400).send({ error: 'Parent not found' });
+          return res.status(400).send({ error: 'Parent not found' });
         }
         const parentFile = await dbClient.db.collection('files').findOne({ _id: ObjectId(parentId) });
         if (!parentFile) {
