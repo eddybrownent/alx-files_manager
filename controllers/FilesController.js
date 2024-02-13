@@ -11,6 +11,17 @@ import fileQueue from '../worker';
 class FilesController {
   static async postUpload(req, res) {
     try {
+      // check for the X-Token header
+      const token = req.header('X-Token');
+      if (!token) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+
+      // check if the token exists the redis
+      const redisToken = await redisClient.get(`auth_${token}`);
+      if (!redisToken) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
       const { userId } = await userUtils.getIdAndKey(req);
 
       if (!userId) {
