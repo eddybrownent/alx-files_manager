@@ -331,7 +331,6 @@ class FilesController {
       res.setHeader('Content-Type', mimeType);
       return res.send(dataFile);
     } catch (error) {
-      console.error('Error retrieving file:', error);
       return res.status(404).send({ error: 'Not found' });
     }
   }
