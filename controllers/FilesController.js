@@ -313,55 +313,39 @@ class FilesController {
   }
 
   static async getFile(req, res) {
-    try {
-      // check for the X-Token header
-      const token = req.header('X-Token');
-      if (!token) {
-        return res.status(401).send({ error: 'Unauthorized' });
-      }
+    const fileId = req.params.id;
 
-      // check if the token exists the redis
-      const redisToken = await redisClient.get(`auth_${token}`);
-      if (!redisToken) {
-        return res.status(401).send({ error: 'Unauthorized' });
-      }
+    // get file using ID
+    const file = await dbClient.db.collection('files').findOne({ _id: ObjectId(fileId) });
 
-      const fileId = req.params.id;
-
-      // get file using ID
-      const file = await dbClient.db.collection('files').findOne({ _id: ObjectId(fileId) });
-
-      if (!file) {
-        return res.status(404).send({ error: 'Not found' });
-      }
-
-      // check if file is public or the user is authenticated and owner of the file
-      const { userId } = await userUtils.getIdAndKey(req);
-      if (!file.isPublic && (!userId || file.userId !== userId)) {
-        return res.status(404).send({ error: 'Not found' });
-      }
-
-      if (file.type === 'folder') {
-        return res.status(400).send({ error: "A folder doesn't have content" });
-      }
-
-      // Check if the file is locally present
-      if (!fs.existsSync(file.localPath)) {
-        return res.status(404).send({ error: 'Not found' });
-      }
-
-      // Get the MIME-type based on the name of the file
-      const mimeType = mimeTypes.lookup(file.name);
-
-      // Return the content of the file with the correct MIME-type
-      res.setHeader('Content-Type', mimeType);
-      const fileStream = fs.createReadStream(file.localPath);
-      fileStream.pipe(res);
-    } catch (error) {
-      console.error('Error retrieving file data:', error);
+    if (!file) {
       return res.status(404).send({ error: 'Not found' });
     }
-    return res.status(500).send({ error: 'Internal Server Error' });
+
+    // check if file is public or the user is authenticated and owner of the file
+    const { userId } = await userUtils.getIdAndKey(req);
+    if (!file.isPublic && (!userId || file.userId !== userId)) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+
+    if (file.type === 'folder') {
+      return res.status(400).send({ error: "A folder doesn't have content" });
+    }
+
+    // Check if the file is locally present
+    if (!fs.existsSync(file.localPath)) {
+      return res.status(404).send({ error: 'Not found' });
+    }
+
+    // Get the MIME-type based on the name of the file
+    const mimeType = mimeTypes.lookup(file.name);
+
+    // Return the content of the file with the correct MIME-type
+    res.setHeader('Content-Type', mimeType);
+    const fileStream = fs.createReadStream(file.localPath);
+    fileStream.pipe(res);
+
+    return res.status(404).send({ error: 'Not found' });
   }
 }
 
