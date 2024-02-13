@@ -148,8 +148,7 @@ class FilesController {
       // Return the file document
       return res.status(200).send(sanitizedFile);
     } catch (error) {
-      console.error('Error retrieving file:', error);
-      return res.status(500).send({ error: 'Internal Server Error' });
+      return res.status(404).send({ error: 'Not found' });
     }
   }
 
@@ -209,8 +208,7 @@ class FilesController {
       // Return the list of files
       return res.status(200).send(sanitizedFiles);
     } catch (error) {
-      console.error('Error retrieving files:', error);
-      return res.status(500).send({ error: 'Internal Server Error' });
+      return res.status(404).send({ error: 'Not found' });
     }
   }
 
@@ -260,7 +258,7 @@ class FilesController {
       // return the doc
       return res.status(200).send(sanitizedFile);
     } catch (error) {
-      return res.status(500).send({ error: 'Internal Server Error' });
+      return res.status(404).send({ error: 'Not found' });
     }
   }
 
@@ -309,7 +307,7 @@ class FilesController {
       // Return the doc
       return res.status(200).send(sanitizedFile);
     } catch (error) {
-      return res.status(500).send({ error: 'Internal Server Error' });
+      return res.status(404).send({ error: 'Not found' });
     }
   }
 }
