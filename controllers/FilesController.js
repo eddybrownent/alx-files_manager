@@ -314,6 +314,18 @@ class FilesController {
 
   static async getFile(req, res) {
     try {
+      // check for the X-Token header
+      const token = req.header('X-Token');
+      if (!token) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+
+      // check if the token exists the redis
+      const redisToken = await redisClient.get(`auth_${token}`);
+      if (!redisToken) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+
       const fileId = req.params.id;
 
       // get file using ID
