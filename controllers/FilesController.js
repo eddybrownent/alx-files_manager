@@ -260,7 +260,6 @@ class FilesController {
       // return the doc
       return res.status(200).send(sanitizedFile);
     } catch (error) {
-      console.error('Error publishing file:', error);
       return res.status(500).send({ error: 'Internal Server Error' });
     }
   }
@@ -310,7 +309,6 @@ class FilesController {
       // Return the doc
       return res.status(200).send(sanitizedFile);
     } catch (error) {
-      console.error('Error unpublishing file:', error);
       return res.status(500).send({ error: 'Internal Server Error' });
     }
   }
