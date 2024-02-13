@@ -1,3 +1,4 @@
+import mimeTypes from 'mime-types';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -309,6 +310,46 @@ class FilesController {
     } catch (error) {
       return res.status(404).send({ error: 'Not found' });
     }
+  }
+
+  static async getFile(req, res) {
+    try {
+      const fileId = req.params.id;
+
+      // get file using ID
+      const file = await dbClient.db.collection('files').findOne({ _id: ObjectId(fileId) });
+
+      if (!file) {
+        return res.status(404).send({ error: 'Not found' });
+      }
+
+      // check if file is public or the user is authenticated and owner of the file
+      const { userId } = await userUtils.getIdAndKey(req);
+      if (!file.isPublic && (!userId || file.userId !== userId)) {
+        return res.status(404).send({ error: 'Not found' });
+      }
+
+      if (file.type === 'folder') {
+        return res.status(400).send({ error: "A folder doesn't have content" });
+      }
+
+      // Check if the file is locally present
+      if (!fs.existsSync(file.localPath)) {
+        return res.status(404).send({ error: 'Not found' });
+      }
+
+      // Get the MIME-type based on the name of the file
+      const mimeType = mimeTypes.lookup(file.name);
+
+      // Return the content of the file with the correct MIME-type
+      res.setHeader('Content-Type', mimeType);
+      const fileStream = fs.createReadStream(file.localPath);
+      fileStream.pipe(res);
+    } catch (error) {
+      console.error('Error retrieving file data:', error);
+      return res.status(404).send({ error: 'Not found' });
+    }
+    return res.status(500).send({ error: 'Internal Server Error' });
   }
 }
 
