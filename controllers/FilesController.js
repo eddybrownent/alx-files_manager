@@ -213,6 +213,83 @@ class FilesController {
       return res.status(500).send({ error: 'Internal Server Error' });
     }
   }
+
+  static async putPublish(req, res) {
+    try {
+      // get user ID using token
+      const { userId } = await userUtils.getIdAndKey(req);
+
+      // If user not found, return Unauthorized
+      if (!userId) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const fileId = req.params.id;
+      // get file using the ID
+      const file = await dbClient.db.collection('files').findOne({ _id: ObjectId(fileId), userId });
+
+      if (!file) {
+        return res.status(404).send({ error: 'Not found' });
+      }
+
+      // change the value of isPublic to true
+      await dbClient.db.collection('files').updateOne({ _id: ObjectId(fileId) }, { $set: { isPublic: true } });
+
+      // Sanitize the response
+      const sanitizedFile = {
+        id: fileId,
+        userId: file.userId,
+        name: file.name,
+        type: file.type,
+        isPublic: true,
+        parentId: file.parentId,
+      };
+
+      // return the doc
+      return res.status(200).send(sanitizedFile);
+    } catch (error) {
+      console.error('Error publishing file:', error);
+      return res.status(500).send({ error: 'Internal Server Error' });
+    }
+  }
+
+  static async putUnpublish(req, res) {
+    try {
+      // gets the user using id
+      const { userId } = await userUtils.getIdAndKey(req);
+
+      if (!userId) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+
+      const fileId = req.params.id;
+      // gets file using the ID
+      const file = await dbClient.db.collection('files').findOne({ _id: ObjectId(fileId), userId });
+
+      if (!file) {
+        return res.status(404).send({ error: 'Not found' });
+      }
+
+      // change value of isPublic to false
+      await dbClient.db.collection('files').updateOne({ _id: ObjectId(fileId) }, { $set: { isPublic: false } });
+
+      // Sanitize the response
+      const sanitizedFile = {
+        id: fileId,
+        userId: file.userId,
+        name: file.name,
+        type: file.type,
+        isPublic: false,
+        parentId: file.parentId,
+      };
+
+      // Return the doc
+      return res.status(200).send(sanitizedFile);
+    } catch (error) {
+      console.error('Error unpublishing file:', error);
+      return res.status(500).send({ error: 'Internal Server Error' });
+    }
+  }
 }
 
 export default FilesController;
