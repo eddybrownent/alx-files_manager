@@ -216,6 +216,18 @@ class FilesController {
 
   static async putPublish(req, res) {
     try {
+      // check for the X-Token header
+      const token = req.header('X-Token');
+      if (!token) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+
+      // check if the token exists the redis
+      const redisToken = await redisClient.get(`auth_${token}`);
+      if (!redisToken) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+
       // get user ID using token
       const { userId } = await userUtils.getIdAndKey(req);
 
@@ -255,6 +267,18 @@ class FilesController {
 
   static async putUnpublish(req, res) {
     try {
+      // check for the X-Token header
+      const token = req.header('X-Token');
+      if (!token) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+
+      // check if the token exists the redis
+      const redisToken = await redisClient.get(`auth_${token}`);
+      if (!redisToken) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+
       // gets the user using id
       const { userId } = await userUtils.getIdAndKey(req);
 
