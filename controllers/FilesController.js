@@ -292,45 +292,48 @@ class FilesController {
   }
 
   static async getFile(req, res) {
-    const fileId = req.params.id;
-    const { size } = req.query; // Retrieve size parameter from query
+    try {
+      const fileId = req.params.id || '';
+      const size = req.query.size || 0;
 
-    // get file using ID
-    const file = await dbClient.db.collection('files').findOne({ _id: ObjectId(fileId) });
+      const file = await dbClient.db.collection('files').findOne({ _id: ObjectId(fileId) });
+      if (!file) {
+        return res.status(404).send({ error: 'Not found' });
+      }
 
-    if (!file) {
+      const {
+        isPublic, userId, type, name, localPath,
+      } = file;
+
+      const { userId: authenticatedUserId } = await userUtils.getIdAndKey(req);
+      const isOwner = authenticatedUserId && authenticatedUserId.toString() === userId.toString();
+
+      if (!isPublic && !isOwner) {
+        return res.status(404).send({ error: 'Not found' });
+      }
+
+      if (type === 'folder') {
+        return res.status(400).send({ error: "A folder doesn't have content" });
+      }
+
+      let filePath = localPath;
+      if (!Number.isNaN(Number(size)) && [500, 250, 100].includes(Number(size))) {
+        filePath += `_${size}`;
+      }
+
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).send({ error: 'Not found' });
+      }
+
+      const dataFile = fs.readFileSync(filePath);
+      const mimeType = mimeTypes.lookup(name);
+
+      res.setHeader('Content-Type', mimeType);
+      return res.send(dataFile);
+    } catch (error) {
+      console.error('Error retrieving file:', error);
       return res.status(404).send({ error: 'Not found' });
     }
-
-    // check if file is public or the user is authenticated and owner of the file
-    const { userId } = await userUtils.getIdAndKey(req);
-    if (!file.isPublic && (!userId || file.userId !== userId)) {
-      return res.status(404).send({ error: 'Not found' });
-    }
-
-    if (file.type === 'folder') {
-      return res.status(400).send({ error: "A folder doesn't have content" });
-    }
-
-    let filePath = file.localPath;
-    if (!Number.isNaN(Number(size)) && [500, 250, 100].includes(Number(size))) {
-      filePath += `_${size}`;
-    }
-
-    // Check if the file is locally present
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).send({ error: 'Not found' });
-    }
-
-    // Get the MIME-type based on the name of the file
-    const mimeType = mimeTypes.lookup(file.name);
-
-    // Return the content of the file with the correct MIME-type
-    res.setHeader('Content-Type', mimeType);
-    const fileStream = fs.createReadStream(filePath); // Use modified filePath
-    fileStream.pipe(res);
-
-    return res.status(404).send({ error: 'Not found' });
   }
 }
 
