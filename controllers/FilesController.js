@@ -115,8 +115,9 @@ class FilesController {
         return res.status(401).send({ error: 'Unauthorized' });
       }
 
+      const fileId = req.params.id;
       // Retrieve file document based on the ID
-      const file = await dbClient.db.collection('files').findOne({ _id: ObjectId(req.params.id), userId });
+      const file = await dbClient.db.collection('files').findOne({ _id: ObjectId(fileId), userId });
 
       // If no file document found, return Not Found
       if (!file) {
@@ -125,6 +126,7 @@ class FilesController {
 
       // Remove unwanted fields
       const sanitizedFile = {
+        id: fileId,
         ...file,
         localPath: undefined,
         _id: undefined,
@@ -140,7 +142,7 @@ class FilesController {
 
   static async getIndex(req, res) {
     try {
-      // Retrieve user ID based on the token
+      // get user ID based on the token
       const { userId } = await userUtils.getIdAndKey(req);
 
       // If user not found, return Unauthorized
@@ -148,11 +150,11 @@ class FilesController {
         return res.status(401).send({ error: 'Unauthorized' });
       }
 
-      // Retrieve parentId from query parameters or set default to 0
+      // get parentId from query parameters or set default to 0
       let parentId = req.query.parentId || '0';
       if (parentId === '0') parentId = 0;
 
-      // Define pagination parameters
+      // pagination parameters
       let page = Number(req.query.page) || 0;
       if (Number.isNaN(page)) page = 0;
 
@@ -161,7 +163,7 @@ class FilesController {
       let aggregateData = [{ $match: aggregationMatch }, { $skip: page * 20 }, { $limit: 20 }];
       if (parentId === 0) aggregateData = [{ $skip: page * 20 }, { $limit: 20 }];
 
-      // Execute aggregation pipeline to retrieve files
+      // aggregation pipeline to retrieve files
       const filesCursor = await dbClient.db.collection('files').aggregate(aggregateData);
 
       // Convert cursor to array of files
