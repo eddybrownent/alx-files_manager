@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { ObjectId } from 'mongodb';
 import dbClient from '../utils/db';
 import userUtils from '../utils/users';
+import redisClient from '../utils/redis';
 
 class FilesController {
   static async postUpload(req, res) {
@@ -107,6 +108,18 @@ class FilesController {
 
   static async getShow(req, res) {
     try {
+      // check for the X-Token header
+      const token = req.header('X-Token');
+      if (!token) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+
+      // check if the token exists the redis
+      const redisToken = await redisClient.get(`auth_${token}`);
+      if (!redisToken) {
+        return res.status(401).send({ error: 'Unauthorized' });
+      }
+
       // Retrieve user ID based on the token
       const { userId } = await userUtils.getIdAndKey(req);
 
