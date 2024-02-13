@@ -149,33 +149,37 @@ class FilesController {
       }
 
       // Retrieve parentId from query parameters or set default to 0
-      const parentId = req.query.parentId || 0;
+      let parentId = req.query.parentId || '0';
+      if (parentId === '0') parentId = 0;
 
       // Define pagination parameters
-      const page = req.query.page || 0;
-      const limit = 20;
-      const skip = page * limit;
+      let page = Number(req.query.page) || 0;
+      if (Number.isNaN(page)) page = 0;
 
-      // Retrieve file documents based on the parentId and pagination
-      const files = await dbClient.db.collection('files')
-        .find({ parentId, userId })
-        .skip(skip)
-        .limit(limit)
-        .toArray();
+      // Construct aggregation pipeline based on parentId and pagination
+      const aggregationMatch = { $and: [{ parentId }] };
+      let aggregateData = [{ $match: aggregationMatch }, { $skip: page * 20 }, { $limit: 20 }];
+      if (parentId === 0) aggregateData = [{ $skip: page * 20 }, { $limit: 20 }];
 
-      const sanitizedFiles = files.map((file) => {
-        // Check if _id exists before converting it to a string
-        const id = file._id ? file._id.toString() : null;
-        const sanitizedFile = {
-          id,
-          ...file,
-          localPath: undefined,
-          _id: undefined,
-        };
-        return sanitizedFile;
-      });
+      // Execute aggregation pipeline to retrieve files
+      const filesCursor = await dbClient.db.collection('files').aggregate(aggregateData);
 
-      // Return the list of file documents
+      // Convert cursor to array of files
+      const files = await filesCursor.toArray();
+
+      // Sanitize files and remove unnecessary fields
+      const sanitizedFiles = files.map((file) => ({
+        id: file._id.toString(),
+        userId: file.userId,
+        name: file.name,
+        type: file.type,
+        isPublic: file.isPublic,
+        parentId: file.parentId,
+        localPath: undefined, // Remove localPath for security
+        _id: undefined, // Remove MongoDB-specific _id field
+      }));
+
+      // Return the list of files
       return res.status(200).send(sanitizedFiles);
     } catch (error) {
       console.error('Error retrieving files:', error);
